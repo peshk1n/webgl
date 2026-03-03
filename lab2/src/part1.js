@@ -11,11 +11,7 @@ var stripedSquareBuffer;
 
 function start() {
     var canvas = document.getElementById("glcanvas");
-    gl = canvas.getContext("webgl2");
-    if (!gl) {
-        alert("WebGL2 не поддерживается.");
-        return;
-    }
+    gl = initWebGL(canvas)
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -25,6 +21,24 @@ function start() {
     initShaders();
     initBuffers();
     drawScene();
+}
+
+function initWebGL(canvas) {
+    var names = ["webgl2", "webgl", "experimental-webgl"];
+    var context = null;
+
+    for (var i = 0; i < names.length; i++) {
+        try {
+            context = canvas.getContext(names[i]);
+        } catch(e) {}
+        if (context) break;
+    }
+
+    if (!context) {
+        alert("Unable to initialize WebGL.");
+    }
+
+    return context;
 }
 
 function initShaders() {
