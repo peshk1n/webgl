@@ -64,7 +64,7 @@ function initShaders() {
 
     void main() {
         float k = 10.0;
-        int stripe = int((vPosition.x + 1.0) * k);
+        int stripe = int((vPosition.y + 1.0) * k);
         if ((stripe % 2) == 0) {
             fragColor = vec4(0.0, 1.0, 1.0, 1.0);
         } else {
