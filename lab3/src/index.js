@@ -15,8 +15,8 @@ let ambientStrength = 0.2;
 let linearAttenuation = 0.09;
 let quadraticAttenuation = 0.032;
 
-let shadingMode = "phong";       // "gouraud" / "phong"
-let lightingModel = "lambert";    // "lambert" / "phong"
+let shadingMode = "phong";       
+let lightingModel = "lambert";    
 
 let isMouseDown = false;
 let lastMouseX = 0, lastMouseY = 0;
@@ -70,7 +70,6 @@ function initWebGL(canvas){
     return ctx;
 }
 
-// --- Shader utility functions ---
 function loadShader(gl, type, source) {
     const shader = gl.createShader(type);
     gl.shaderSource(shader, source);
@@ -100,7 +99,6 @@ function initShaderProgram(gl, vsSource, fsSource) {
     return shaderProgram;
 }
 
-// --- Initialize shaders ---
 function initShaders(){
     const vsGouraud = `#version 300 es
     in vec3 aVertexPosition;
@@ -128,14 +126,34 @@ function initShaders(){
         vec3 diffuse = max(dot(norm, lightDir), 0.0) * uLightColor * uObjectColor;
 
         vec3 result;
+        vec3 viewDir = normalize(-fragPos);
+
         if(uLightingModel==0){
+            // Ламберт
             result = ambient + diffuse * attenuation;
-        } else {
-            vec3 viewDir = normalize(-fragPos);
-            vec3 reflectDir = reflect(-lightDir,norm);
-            float spec = pow(max(dot(viewDir,reflectDir),0.0),32.0);
+        } else if(uLightingModel==1){
+            // Фонг
+            vec3 reflectDir = reflect(-lightDir, norm);
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
             vec3 specular = spec * uLightColor;
-            result = ambient + (diffuse + specular)*attenuation;
+            result = ambient + (diffuse + specular) * attenuation;
+        } else if(uLightingModel==2){
+            // Блинн-Фонг
+            vec3 halfDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(norm, halfDir), 0.0), 64.0);
+            vec3 specular = spec * uLightColor;
+            result = ambient + (diffuse + specular) * attenuation;
+        } else {
+            // Тун
+            float diff = max(dot(norm, lightDir), 0.0);
+            float toonDiff = diff > 0.95 ? 1.0 :
+                            diff > 0.5  ? 0.7 :
+                            diff > 0.25 ? 0.4 : 0.1;
+            vec3 reflectDir = reflect(-lightDir, norm);
+            float spec = dot(viewDir, reflectDir);
+            float toonSpec = spec > 0.9 ? 1.0 : 0.0;
+            result = ambient + toonDiff * uLightColor * uObjectColor * attenuation
+                            + toonSpec * uLightColor * attenuation;
         }
 
         vColor = vec4(result,1.0);
@@ -192,13 +210,30 @@ function initShaders(){
         float attenuation = 1.0/(1.0 + uLinearAttenuation*distance + uQuadraticAttenuation*distance*distance);
         vec3 ambient = uAmbientStrength * uLightColor * uObjectColor;
         vec3 diffuse = diff * uLightColor * uObjectColor;
-        vec3 specular = pow(max(dot(viewDir,reflectDir),0.0),32.0) * uLightColor;
+        //vec3 specular = pow(max(dot(viewDir,reflectDir),0.0),32.0) * uLightColor;
 
         vec3 result;
         if(uLightingModel==0){
+            // Ламберт
             result = ambient + diffuse * attenuation;
-        } else {
+        } else if(uLightingModel==1){
+            // Фонг
+            vec3 specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0) * uLightColor;
             result = ambient + (diffuse + specular) * attenuation;
+        } else if(uLightingModel==2){
+            // Блинн-Фонг
+            vec3 halfDir = normalize(lightDir + viewDir);
+            float spec = pow(max(dot(norm, halfDir), 0.0), 64.0);
+            vec3 specular = spec * uLightColor;
+            result = ambient + (diffuse + specular) * attenuation;
+        } else {
+            // Тун
+            float toonDiff = diff > 0.95 ? 1.0 :
+                            diff > 0.5  ? 0.7 :
+                            diff > 0.25 ? 0.4 : 0.1;
+            vec3 specular = dot(viewDir, reflectDir) > 0.9 ? uLightColor : vec3(0.0);
+            result = ambient + toonDiff * uLightColor * uObjectColor * attenuation
+                            + specular * attenuation;
         }
 
         fragColor = vec4(result,1.0);
@@ -207,7 +242,6 @@ function initShaders(){
     shaderProgramPhong = initShaderProgram(gl, vsPhong, fsPhong);
 }
 
-// --- Buffer and OBJ loading ---
 async function initBuffers(){
     const objects = await loadOBJ("src/scene.obj");
     const colors = [[1,0,0],[0,1,0],[0,0,1]];
@@ -293,7 +327,6 @@ function parseOBJ(text){
     return objects;
 }
 
-// --- Camera ---
 function createProjectionMatrix(){
     const fov = 45*Math.PI/180;
     const aspect = gl.canvas.width/gl.canvas.height;
@@ -314,7 +347,6 @@ function getRightVector() {
     return [Math.cos(cameraYaw),0,Math.sin(cameraYaw)];
 }
 
-// --- Drawing ---
 function drawScene(){
     gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
 
@@ -354,7 +386,8 @@ function drawScene(){
         gl.uniform1f(gl.getUniformLocation(shaderProgram,"uLinearAttenuation"),linearAttenuation);
         gl.uniform1f(gl.getUniformLocation(shaderProgram,"uQuadraticAttenuation"),quadraticAttenuation);
         gl.uniform3fv(gl.getUniformLocation(shaderProgram,"uObjectColor"),obj.color);
-        gl.uniform1i(gl.getUniformLocation(shaderProgram,"uLightingModel"),(lightingModel==="lambert")?0:1);
+        const modelIndex = {lambert:0, phong:1, blinn:2, toon:3}[lightingModel] ?? 0;
+        gl.uniform1i(gl.getUniformLocation(shaderProgram,"uLightingModel"), modelIndex);
 
         if(shadingMode==="phong"){
             gl.uniform3fv(gl.getUniformLocation(shaderProgram,"uViewPos"),[0,0,0]); 
@@ -366,7 +399,6 @@ function drawScene(){
     requestAnimationFrame(drawScene);
 }
 
-// --- Input handling ---
 function handleKeyDown(event){
     const moveSpeed = 0.3;
     const forward = getForwardVector();
@@ -381,6 +413,8 @@ function handleKeyDown(event){
         case "2": shadingMode="phong"; break;
         case "l": lightingModel="lambert"; break;
         case "p": lightingModel="phong"; break;
+        case "b": lightingModel="blinn"; break;
+        case "t": lightingModel="toon"; break;
         case "ArrowUp": ambientStrength = Math.min(ambientStrength+0.05,1); break;
         case "ArrowDown": ambientStrength = Math.max(ambientStrength-0.05,0); break;
         case "z": linearAttenuation += 0.01; break;
