@@ -1,11 +1,12 @@
 "use strict";
 
 var gl;
-var shaderProgramGouraud, shaderProgramPhong;
+var shaderProgram;
+var shaderProgramScene;
 
 var sceneObjects = [];
 var cameraPosition = [7, 2, -12];
-var cameraYaw = Math.PI+0.7;
+var cameraYaw = Math.PI + 0.7;
 var cameraPitch = 0;
 var sensitivity = 0.002;
 
@@ -15,22 +16,30 @@ let ambientStrength = 0.2;
 let linearAttenuation = 0.09;
 let quadraticAttenuation = 0.032;
 
-let shadingMode = "phong";       
-let lightingModel = "lambert";    
+let texBalance  = 0.5; // 0 = только материал, 1 = только номер
+let colorWeight = 0.2; // 0 = нет цвета, 1 = только цвет
 
 let isMouseDown = false;
 let lastMouseX = 0, lastMouseY = 0;
+
+// кубы
+const CUBE_DEFS = [
+    { position: [ 0.0, 1.5,  0.0], size: 1, numberTex: "src/textures/1.png", color: [1, 0, 0] }, // верхний
+    { position: [-0.6, 0.5,  0.0], size: 1, numberTex: "src/textures/2.png", color: [0, 1, 0] }, // нижний левый
+    { position: [ 0.6, 0.5,  0.0], size: 1, numberTex: "src/textures/3.png", color: [0, 0, 1] }, // нижний правый
+];
+const TEX_EXTENSIONS = [".png", ".jpg", ".jpeg"];
+const TEX_BASE_PATH  = "src/textures/";
 
 function start() {
     const canvas = document.getElementById("glcanvas");
     gl = initWebGL(canvas);
 
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0,0,0,1);
+    gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.DEPTH_TEST);
 
     initShaders();
-
     initBuffers().then(() => requestAnimationFrame(drawScene));
 
     window.addEventListener("keydown", handleKeyDown);
@@ -43,30 +52,26 @@ function start() {
     canvas.addEventListener("mousemove", handleMouseMove);
 }
 
-function handleMouseMove(e){
-    if(!isMouseDown) return;
-
+function handleMouseMove(e) {
+    if (!isMouseDown) return;
     const dx = e.clientX - lastMouseX;
     const dy = e.clientY - lastMouseY;
-
     cameraYaw   += dx * sensitivity;
     cameraPitch -= dy * sensitivity;
-
-    const maxPitch = Math.PI/2 - 0.01;
+    const maxPitch = Math.PI / 2 - 0.01;
     cameraPitch = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch));
-
     lastMouseX = e.clientX;
     lastMouseY = e.clientY;
 }
 
-function initWebGL(canvas){
-    const names = ["webgl2","webgl","experimental-webgl"];
+function initWebGL(canvas) {
+    const names = ["webgl2", "webgl", "experimental-webgl"];
     let ctx = null;
-    for(const n of names){
-        try{ ctx = canvas.getContext(n); } catch(e){}
-        if(ctx) break;
+    for (const n of names) {
+        try { ctx = canvas.getContext(n); } catch (e) {}
+        if (ctx) break;
     }
-    if(!ctx) alert("Unable to initialize WebGL");
+    if (!ctx) alert("Unable to initialize WebGL");
     return ctx;
 }
 
@@ -83,179 +88,280 @@ function loadShader(gl, type, source) {
 }
 
 function initShaderProgram(gl, vsSource, fsSource) {
-    const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+    const vertexShader   = loadShader(gl, gl.VERTEX_SHADER,   vsSource);
     const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
-
-    const shaderProgram = gl.createProgram();
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    gl.linkProgram(shaderProgram);
-
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-        console.error("Shader program link error: " + gl.getProgramInfoLog(shaderProgram));
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        console.error("Shader program link error: " + gl.getProgramInfoLog(program));
         return null;
     }
-
-    return shaderProgram;
+    return program;
 }
 
-function initShaders(){
-    const vsGouraud = `#version 300 es
+function initShaders() {
+    // кубы
+    const vsCube = `#version 300 es
     in vec3 aVertexPosition;
     in vec3 aVertexNormal;
-
-    uniform mat4 uMVMatrix;
-    uniform mat4 uPMatrix;
-    uniform vec3 uLightPos;
-    uniform vec3 uLightColor;
-    uniform float uAmbientStrength;
-    uniform float uLinearAttenuation;
-    uniform float uQuadraticAttenuation;
-    uniform vec3 uObjectColor;
-    uniform int uLightingModel;
-
-    out vec4 vColor;
-
-    void main(){
-        vec3 fragPos = vec3(uMVMatrix * vec4(aVertexPosition,1.0));
-        vec3 norm = normalize(mat3(uMVMatrix) * aVertexNormal);
-        vec3 lightDir = normalize(uLightPos - fragPos);
-        float distance = length(uLightPos - fragPos);
-        float attenuation = 1.0 / (1.0 + uLinearAttenuation*distance + uQuadraticAttenuation*distance*distance);
-        vec3 ambient = uAmbientStrength * uLightColor * uObjectColor;
-        vec3 diffuse = max(dot(norm, lightDir), 0.0) * uLightColor * uObjectColor;
-
-        vec3 result;
-        vec3 viewDir = normalize(-fragPos);
-
-        if(uLightingModel==0){
-            // Ламберт
-            result = ambient + diffuse * attenuation;
-        } else if(uLightingModel==1){
-            // Фонг
-            vec3 reflectDir = reflect(-lightDir, norm);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
-            vec3 specular = spec * uLightColor;
-            result = ambient + (diffuse + specular) * attenuation;
-        } else if(uLightingModel==2){
-            // Блинн-Фонг
-            vec3 halfDir = normalize(lightDir + viewDir);
-            float spec = pow(max(dot(norm, halfDir), 0.0), 64.0);
-            vec3 specular = spec * uLightColor;
-            result = ambient + (diffuse + specular) * attenuation;
-        } else {
-            // Тун
-            float diff = max(dot(norm, lightDir), 0.0);
-            float toonDiff = diff > 0.95 ? 1.0 :
-                            diff > 0.5  ? 0.7 :
-                            diff > 0.25 ? 0.4 : 0.1;
-            vec3 reflectDir = reflect(-lightDir, norm);
-            float spec = dot(viewDir, reflectDir);
-            float toonSpec = spec > 0.9 ? 1.0 : 0.0;
-            result = ambient + toonDiff * uLightColor * uObjectColor * attenuation
-                            + toonSpec * uLightColor * attenuation;
-        }
-
-        vColor = vec4(result,1.0);
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
-    }`;
-
-    const fsGouraud = `#version 300 es
-    precision highp float;
-    in vec4 vColor;
-    out vec4 fragColor;
-    void main(){ fragColor = vColor; }`;
-
-    shaderProgramGouraud = initShaderProgram(gl, vsGouraud, fsGouraud);
-
-    const vsPhong = `#version 300 es
-    in vec3 aVertexPosition;
-    in vec3 aVertexNormal;
+    in vec2 aTexCoord;
 
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
 
     out vec3 vFragPos;
     out vec3 vNormal;
+    out vec2 vTexCoord;
 
-    void main(){
-        vFragPos = vec3(uMVMatrix * vec4(aVertexPosition,1.0));
-        vNormal = mat3(uMVMatrix)*aVertexNormal;
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition,1.0);
+    void main() {
+        vFragPos = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
+        vNormal = mat3(uMVMatrix) * aVertexNormal;
+        vTexCoord = aTexCoord;
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
     }`;
 
-    const fsPhong = `#version 300 es
+    const fsCube = `#version 300 es
     precision highp float;
+
     in vec3 vFragPos;
     in vec3 vNormal;
+    in vec2 vTexCoord;
 
-    uniform vec3 uLightPos;
-    uniform vec3 uLightColor;
-    uniform vec3 uViewPos;
+    uniform vec3  uLightPos;
+    uniform vec3  uLightColor;
     uniform float uAmbientStrength;
     uniform float uLinearAttenuation;
     uniform float uQuadraticAttenuation;
-    uniform vec3 uObjectColor;
-    uniform int uLightingModel;
+    uniform vec3  uObjectColor;
+
+    uniform sampler2D uTexNumber;
+    uniform sampler2D uTexMaterial;
+
+    uniform float uTexBalance;  
+    uniform float uColorWeight;
 
     out vec4 fragColor;
 
-    void main(){
-        vec3 norm = normalize(vNormal);
-        vec3 lightDir = normalize(uLightPos - vFragPos);
-        vec3 viewDir = normalize(uViewPos - vFragPos);
-        vec3 reflectDir = reflect(-lightDir,norm);
-        float diff = max(dot(norm,lightDir),0.0);
-        float distance = length(uLightPos - vFragPos);
-        float attenuation = 1.0/(1.0 + uLinearAttenuation*distance + uQuadraticAttenuation*distance*distance);
-        vec3 ambient = uAmbientStrength * uLightColor * uObjectColor;
-        vec3 diffuse = diff * uLightColor * uObjectColor;
-        //vec3 specular = pow(max(dot(viewDir,reflectDir),0.0),32.0) * uLightColor;
+    void main() {
+        vec3  norm = normalize(vNormal);
+        vec3  lightDir = normalize(uLightPos - vFragPos);
+        float diff = max(dot(norm, lightDir), 0.0);
+        float dist = length(uLightPos - vFragPos);
+        float atten = 1.0 / (1.0
+            + uLinearAttenuation    * dist
+            + uQuadraticAttenuation * dist * dist);
 
-        vec3 result;
-        if(uLightingModel==0){
-            // Ламберт
-            result = ambient + diffuse * attenuation;
-        } else if(uLightingModel==1){
-            // Фонг
-            vec3 specular = pow(max(dot(viewDir, reflectDir), 0.0), 32.0) * uLightColor;
-            result = ambient + (diffuse + specular) * attenuation;
-        } else if(uLightingModel==2){
-            // Блинн-Фонг
-            vec3 halfDir = normalize(lightDir + viewDir);
-            float spec = pow(max(dot(norm, halfDir), 0.0), 64.0);
-            vec3 specular = spec * uLightColor;
-            result = ambient + (diffuse + specular) * attenuation;
-        } else {
-            // Тун
-            float toonDiff = diff > 0.95 ? 1.0 :
-                            diff > 0.5  ? 0.7 :
-                            diff > 0.25 ? 0.4 : 0.1;
-            vec3 specular = dot(viewDir, reflectDir) > 0.9 ? uLightColor : vec3(0.0);
-            result = ambient + toonDiff * uLightColor * uObjectColor * attenuation
-                            + specular * attenuation;
-        }
+        vec4 texNum = texture(uTexNumber,   vTexCoord);
+        vec4 texMat = texture(uTexMaterial, vTexCoord);
+        vec4 col = vec4(uObjectColor, 1.0);
 
-        fragColor = vec4(result,1.0);
+        vec4 texBlend = mix(texMat, texNum, uTexBalance);
+        vec4 baseColor = mix(texBlend, col, uColorWeight);
+
+        vec3 ambient = uAmbientStrength * uLightColor * baseColor.rgb;
+        vec3 diffuse = diff * uLightColor * baseColor.rgb;
+
+        fragColor = vec4(ambient + diffuse * atten, 1.0);
     }`;
 
-    shaderProgramPhong = initShaderProgram(gl, vsPhong, fsPhong);
+    shaderProgram = initShaderProgram(gl, vsCube, fsCube);
+
+    // объекты
+    const vsScene = `#version 300 es
+    in vec3 aVertexPosition;
+    in vec3 aVertexNormal;
+    in vec2 aTexCoord;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    out vec3 vFragPos;
+    out vec3 vNormal;
+    out vec2 vTexCoord;
+
+    void main() {
+        vFragPos = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
+        vNormal = mat3(uMVMatrix) * aVertexNormal;
+        vTexCoord = aTexCoord;
+        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
+    }`;
+
+    const fsScene = `#version 300 es
+    precision highp float;
+
+    in vec3 vFragPos;
+    in vec3 vNormal;
+    in vec2 vTexCoord;
+
+    uniform vec3 uLightPos;
+    uniform vec3 uLightColor;
+    uniform float uAmbientStrength;
+    uniform float uLinearAttenuation;
+    uniform float uQuadraticAttenuation;
+
+    uniform sampler2D uTexMaterial;
+
+    out vec4 fragColor;
+
+    void main() {
+        vec3  norm = normalize(vNormal);
+        vec3  lightDir = normalize(uLightPos - vFragPos);
+        float diff = max(dot(norm, lightDir), 0.0);
+        float dist = length(uLightPos - vFragPos);
+        float atten = 1.0 / (1.0
+            + uLinearAttenuation    * dist
+            + uQuadraticAttenuation * dist * dist);
+
+        vec4 texColor = texture(uTexMaterial, vTexCoord);
+        vec3 ambient = uAmbientStrength * uLightColor * texColor.rgb;
+        vec3 diffuse = diff* uLightColor * texColor.rgb;
+
+        fragColor = vec4(ambient + diffuse * atten, 1.0);
+    }`;
+
+    shaderProgramScene = initShaderProgram(gl, vsScene, fsScene);
 }
 
-async function initBuffers(){
-    const objects = await loadOBJ("src/scene.obj");
-    const colors = [[1,0,0],[0,1,0],[0,0,1]];
 
-    for(let i=0;i<objects.length;i++){
-        const obj = objects[i];
+function loadTexture(url) {
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0,
+                  gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([200, 200, 200, 255]));
+    const img = new Image();
+    img.onload = () => {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    };
+    img.onerror = () => console.warn(`Texture not found: ${url}`);
+    img.src = url;
+    return texture;
+}
+
+
+  function loadTextureByName(name) {
+    const url = TEX_BASE_PATH + name + TEX_EXTENSIONS[0];
+    return loadTexture(url);
+}
+
+function createCubeMesh(cx, cy, cz, size) {
+    const h = size / 2;
+    const x0 = cx - h, x1 = cx + h;
+    const y0 = cy - h, y1 = cy + h;
+    const z0 = cz - h, z1 = cz + h;
+
+    const faces = [
+        { 
+            verts: [[x0,y1,z0],[x1,y1,z0],[x1,y1,z1],[x0,y1,z1]], 
+            n:[0,1,0],
+            uvs: [[0,0],[1,0],[1,1],[0,1]] 
+        },
+        { 
+            verts: [[x0,y0,z1],[x1,y0,z1],[x1,y0,z0],[x0,y0,z0]], 
+            n:[0,-1,0],
+            uvs: [[0,0],[1,0],[1,1],[0,1]]
+        },
+        { 
+            verts: [[x0,y0,z1],[x1,y0,z1],[x1,y1,z1],[x0,y1,z1]], 
+            n:[0,0,1],
+            uvs: [[0,1],[1,1],[1,0],[0,0]]
+        },
+        { 
+            verts: [[x1,y0,z0],[x0,y0,z0],[x0,y1,z0],[x1,y1,z0]], 
+            n:[0,0,-1],
+            uvs: [[0,1],[1,1],[1,0],[0,0]]
+        },
+        { 
+            verts: [[x1,y0,z1],[x1,y0,z0],[x1,y1,z0],[x1,y1,z1]], 
+            n:[1,0,0],
+            uvs: [[0,1],[1,1],[1,0],[0,0]]
+        },
+        { 
+            verts: [[x0,y0,z0],[x0,y0,z1],[x0,y1,z1],[x0,y1,z0]], 
+            n:[-1,0,0],
+            uvs: [[0,1],[1,1],[1,0],[0,0]]
+        },
+    ];
+
+    const vertices  = [];
+    const normals   = [];
+    const texCoords = [];
+    const indices   = [];
+
+    for (const face of faces) {
+        const base = vertices.length / 3;
+        for (let k = 0; k < 4; k++) {
+            vertices.push(...face.verts[k]);
+            normals.push(...face.n);
+            texCoords.push(...face.uvs[k]);
+        }
+        indices.push(base, base+1, base+2, base, base+2, base+3);
+    }
+
+    return {
+        vertices:  new Float32Array(vertices),
+        normals:   new Float32Array(normals),
+        texCoords: new Float32Array(texCoords),
+        indices:   new Uint16Array(indices),
+    };
+}
+
+function uploadMesh(mesh) {
+    const vertexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.vertices, gl.STATIC_DRAW);
+
+    const normalBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.normals, gl.STATIC_DRAW);
+
+    const texCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.texCoords, gl.STATIC_DRAW);
+
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
+
+    return { vertexBuffer, normalBuffer, texCoordBuffer, indexBuffer, indexCount: mesh.indices.length };
+}
+
+async function initBuffers() {
+    const cubeMaterialTex = loadTexture("src/textures/texture1.jpg");
+
+    for (const def of CUBE_DEFS) {
+        const [cx, cy, cz] = def.position;
+        const mesh = createCubeMesh(cx, cy, cz, def.size);
+        const bufs = uploadMesh(mesh);
+
+        sceneObjects.push({
+            ...bufs,
+            color:       def.color,
+            isCube:      true,
+            texNumber:   loadTexture(def.numberTex),
+            texMaterial: cubeMaterialTex,
+        });
+    }
+
+    const sceneObjs = await loadOBJ("src/scene.obj");
+
+    for (const obj of sceneObjs) {
         const vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(obj.vertices), gl.STATIC_DRAW);
 
+        const normals = obj.normals;
         const normalBuffer = gl.createBuffer();
-        const normals = computeNormals(obj.vertices,obj.indices);
         gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+
+        const texCoordBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(obj.texCoords), gl.STATIC_DRAW);
 
         const indexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
@@ -264,162 +370,274 @@ async function initBuffers(){
         sceneObjects.push({
             vertexBuffer,
             normalBuffer,
+            texCoordBuffer,
             indexBuffer,
             indexCount: obj.indices.length,
-            color: colors[i % colors.length]
+            isCube: false,
+            texMaterial: loadTextureByName(obj.name),
         });
     }
 }
 
-function computeNormals(vertices, indices){
+function computeNormals(vertices, indices) {
     const normals = new Float32Array(vertices.length);
-    for(let i=0;i<indices.length;i+=3){
-        const i0=indices[i]*3, i1=indices[i+1]*3, i2=indices[i+2]*3;
-        const v0=[vertices[i0],vertices[i0+1],vertices[i0+2]];
-        const v1=[vertices[i1],vertices[i1+1],vertices[i1+2]];
-        const v2=[vertices[i2],vertices[i2+1],vertices[i2+2]];
-        const u = v1.map((v,j)=>v-v0[j]);
-        const v_ = v2.map((v,j)=>v-v0[j]);
-        const n = [ u[1]*v_[2]-u[2]*v_[1], u[2]*v_[0]-u[0]*v_[2], u[0]*v_[1]-u[1]*v_[0] ];
-        for(const idx of [i0,i1,i2]){
-            normals[idx] += n[0]; normals[idx+1] += n[1]; normals[idx+2] += n[2];
+    for (let i = 0; i < indices.length; i += 3) {
+        const i0 = indices[i]*3, i1 = indices[i+1]*3, i2 = indices[i+2]*3;
+        const v0 = [vertices[i0],   vertices[i0+1], vertices[i0+2]];
+        const v1 = [vertices[i1],   vertices[i1+1], vertices[i1+2]];
+        const v2 = [vertices[i2],   vertices[i2+1], vertices[i2+2]];
+        const u  = v1.map((v,j) => v - v0[j]);
+        const v_ = v2.map((v,j) => v - v0[j]);
+        const n  = [
+            u[1]*v_[2] - u[2]*v_[1],
+            u[2]*v_[0] - u[0]*v_[2],
+            u[0]*v_[1] - u[1]*v_[0],
+        ];
+        for (const idx of [i0, i1, i2]) {
+            normals[idx]   += n[0];
+            normals[idx+1] += n[1];
+            normals[idx+2] += n[2];
         }
     }
-    for(let i=0;i<normals.length;i+=3){
-        const len = Math.hypot(normals[i],normals[i+1],normals[i+2]);
-        normals[i]/=len; normals[i+1]/=len; normals[i+2]/=len;
+    for (let i = 0; i < normals.length; i += 3) {
+        const len = Math.hypot(normals[i], normals[i+1], normals[i+2]);
+        if (len > 0) { normals[i]/=len; normals[i+1]/=len; normals[i+2]/=len; }
     }
     return normals;
 }
 
-async function loadOBJ(url){
+async function loadOBJ(url) {
     const text = await (await fetch(url)).text();
     return parseOBJ(text);
 }
 
-function parseOBJ(text){
+function parseOBJ(text) {
     const lines = text.split("\n");
-    const positions = [];
-    const objects = [];
-    let currentObject = {vertices:[], indices:[]};
 
-    for(const line of lines){
-        const parts = line.trim().split(/\s+/);
-        if(parts[0]==="o" && currentObject.vertices.length>0){
-            objects.push(currentObject);
-            currentObject={vertices:[], indices:[]};
+    const allPositions = [];
+    const allTexCoords = [];
+    const allNormals   = [];
+
+    const objects = [];
+
+    let cur = null;
+    let curName = "";
+
+    function flush() {
+        if (cur && cur.indices.length > 0) {
+            cur.name = curName;
+            objects.push(cur);
         }
-        if(parts[0]==="v") positions.push([parseFloat(parts[1]),parseFloat(parts[2]),parseFloat(parts[3])]);
-        if(parts[0]==="f"){
-            const face = parts.slice(1);
-            for(let i=1;i<face.length-1;i++){
-                const verts = [face[0],face[i],face[i+1]];
-                for(const v of verts){
-                    const idx = parseInt(v.split("/")[0])-1;
-                    const pos = positions[idx];
-                    currentObject.vertices.push(...pos);
-                    currentObject.indices.push(currentObject.indices.length);
+    }
+
+    function next(name) {
+        flush();
+        curName = name;
+        cur = {
+            vertices: [],
+            texCoords: [],
+            normals: [],
+            indices: []
+        };
+        cur.vertexMap = new Map(); 
+    }
+
+    next("__root__");
+
+    function getVertexIndex(vi, ti, ni) {
+        const key = `${vi}/${ti}/${ni}`;
+
+        if (cur.vertexMap.has(key)) {
+            return cur.vertexMap.get(key);
+        }
+
+        const index = cur.vertices.length / 3;
+        cur.vertices.push(...allPositions[vi]);
+
+        if (!isNaN(ti) && allTexCoords[ti]) {
+            cur.texCoords.push(
+                allTexCoords[ti][0],
+                1.0 - allTexCoords[ti][1] 
+            );
+        } else {
+            cur.texCoords.push(0, 0);
+        }
+
+        if (!isNaN(ni) && allNormals[ni]) {
+            cur.normals.push(...allNormals[ni]);
+        } else {
+            cur.normals.push(0, 1, 0); 
+        }
+
+        cur.vertexMap.set(key, index);
+        return index;
+    }
+
+    for (const line of lines) {
+        const p = line.trim().split(/\s+/);
+
+        switch (p[0]) {
+            case "o":
+                next(p[1] || "");
+                break;
+
+            case "v":
+                allPositions.push([
+                    parseFloat(p[1]),
+                    parseFloat(p[2]),
+                    parseFloat(p[3])
+                ]);
+                break;
+
+            case "vt":
+                allTexCoords.push([
+                    parseFloat(p[1]),
+                    parseFloat(p[2])
+                ]);
+                break;
+
+            case "vn":
+                allNormals.push([
+                    parseFloat(p[1]),
+                    parseFloat(p[2]),
+                    parseFloat(p[3])
+                ]);
+                break;
+
+            case "f": {
+                const face = p.slice(1);
+
+                for (let i = 1; i < face.length - 1; i++) {
+                    for (const tok of [face[0], face[i], face[i + 1]]) {
+
+                        const parts = tok.split("/");
+
+                        const vi = parseInt(parts[0]) - 1;
+                        const ti = parts[1] ? parseInt(parts[1]) - 1 : NaN;
+                        const ni = parts[2] ? parseInt(parts[2]) - 1 : NaN;
+
+                        const idx = getVertexIndex(vi, ti, ni);
+                        cur.indices.push(idx);
+                    }
                 }
+                break;
             }
         }
     }
-    objects.push(currentObject);
+
+    flush();
+
+    for (const obj of objects) {
+        delete obj.vertexMap;
+    }
+
     return objects;
 }
 
-function createProjectionMatrix(){
-    const fov = 45*Math.PI/180;
-    const aspect = gl.canvas.width/gl.canvas.height;
+function createProjectionMatrix() {
+    const fov      = 45 * Math.PI / 180;
+    const aspect   = gl.canvas.width / gl.canvas.height;
     const prMatrix = mat4.create();
-    mat4.perspective(prMatrix,fov,aspect,0.1,100.0);
+    mat4.perspective(prMatrix, fov, aspect, 0.1, 100.0);
     return prMatrix;
 }
 
 function getForwardVector() {
     return [
-        Math.sin(cameraYaw)*Math.cos(cameraPitch),
+        Math.sin(cameraYaw)  * Math.cos(cameraPitch),
         Math.sin(cameraPitch),
-        -Math.cos(cameraYaw)*Math.cos(cameraPitch)
+        -Math.cos(cameraYaw) * Math.cos(cameraPitch),
     ];
 }
 
 function getRightVector() {
-    return [Math.cos(cameraYaw),0,Math.sin(cameraYaw)];
+    return [Math.cos(cameraYaw), 0, Math.sin(cameraYaw)];
 }
 
-function drawScene(){
-    gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+function bindAttrib(program, name, buffer, size) {
+    const loc = gl.getAttribLocation(program, name);
+    if (loc < 0) return;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(loc);
+}
 
-    const shaderProgram = (shadingMode==="gouraud")?shaderProgramGouraud:shaderProgramPhong;
-    gl.useProgram(shaderProgram);
+function bindTexture(program, uniformName, texture, unit) {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.uniform1i(gl.getUniformLocation(program, uniformName), unit);
+}
 
-    const prMatrix = createProjectionMatrix();
-    const mvMatrix = mat4.create();
+function setLightUniforms(program, lightPosViewArr) {
+    gl.uniform3fv(gl.getUniformLocation(program, "uLightPos"),             lightPosViewArr);
+    gl.uniform3fv(gl.getUniformLocation(program, "uLightColor"),           lightColor);
+    gl.uniform1f(gl.getUniformLocation(program,  "uAmbientStrength"),      ambientStrength);
+    gl.uniform1f(gl.getUniformLocation(program,  "uLinearAttenuation"),    linearAttenuation);
+    gl.uniform1f(gl.getUniformLocation(program,  "uQuadraticAttenuation"), quadraticAttenuation);
+}
 
-    const forward = getForwardVector();
-    const cameraTarget = cameraPosition.map((v,i)=>v+forward[i]);
-    mat4.lookAt(mvMatrix,cameraPosition,cameraTarget,[0,1,0]);
+function drawScene() {
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    const lightPos4 = vec4.fromValues(lightPosition[0], lightPosition[1], lightPosition[2], 1.0);
+    const prMatrix     = createProjectionMatrix();
+    const mvMatrix     = mat4.create();
+    const forward      = getForwardVector();
+    const cameraTarget = cameraPosition.map((v, i) => v + forward[i]);
+    mat4.lookAt(mvMatrix, cameraPosition, cameraTarget, [0, 1, 0]);
+
+    const lightPos4    = vec4.fromValues(...lightPosition, 1.0);
     const lightPosView = vec4.create();
     vec4.transformMat4(lightPosView, lightPos4, mvMatrix);
     const lightPosViewArr = [lightPosView[0], lightPosView[1], lightPosView[2]];
 
-    for(const obj of sceneObjects){
-        const posLoc = gl.getAttribLocation(shaderProgram,"aVertexPosition");
-        gl.bindBuffer(gl.ARRAY_BUFFER,obj.vertexBuffer);
-        gl.vertexAttribPointer(posLoc,3,gl.FLOAT,false,0,0);
-        gl.enableVertexAttribArray(posLoc);
+    for (const obj of sceneObjects) {
+        const prog = obj.isCube ? shaderProgram : shaderProgramScene;
+        gl.useProgram(prog);
 
-        const normLoc = gl.getAttribLocation(shaderProgram,"aVertexNormal");
-        gl.bindBuffer(gl.ARRAY_BUFFER,obj.normalBuffer);
-        gl.vertexAttribPointer(normLoc,3,gl.FLOAT,false,0,0);
-        gl.enableVertexAttribArray(normLoc);
+        bindAttrib(prog, "aVertexPosition", obj.vertexBuffer,   3);
+        bindAttrib(prog, "aVertexNormal",   obj.normalBuffer,   3);
+        bindAttrib(prog, "aTexCoord",       obj.texCoordBuffer, 2);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,obj.indexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, obj.indexBuffer);
+        gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uMVMatrix"), false, mvMatrix);
+        gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uPMatrix"),  false, prMatrix);
+        setLightUniforms(prog, lightPosViewArr);
 
-        gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram,"uMVMatrix"),false,mvMatrix);
-        gl.uniformMatrix4fv(gl.getUniformLocation(shaderProgram,"uPMatrix"),false,prMatrix);
-        gl.uniform3fv(gl.getUniformLocation(shaderProgram,"uLightPos"),lightPosViewArr); 
-        gl.uniform3fv(gl.getUniformLocation(shaderProgram,"uLightColor"),lightColor);
-        gl.uniform1f(gl.getUniformLocation(shaderProgram,"uAmbientStrength"),ambientStrength);
-        gl.uniform1f(gl.getUniformLocation(shaderProgram,"uLinearAttenuation"),linearAttenuation);
-        gl.uniform1f(gl.getUniformLocation(shaderProgram,"uQuadraticAttenuation"),quadraticAttenuation);
-        gl.uniform3fv(gl.getUniformLocation(shaderProgram,"uObjectColor"),obj.color);
-        const modelIndex = {lambert:0, phong:1, blinn:2, toon:3}[lightingModel] ?? 0;
-        gl.uniform1i(gl.getUniformLocation(shaderProgram,"uLightingModel"), modelIndex);
-
-        if(shadingMode==="phong"){
-            gl.uniform3fv(gl.getUniformLocation(shaderProgram,"uViewPos"),[0,0,0]); 
+        if (obj.isCube) {
+            gl.uniform3fv(gl.getUniformLocation(prog, "uObjectColor"),    obj.color);
+            gl.uniform1f(gl.getUniformLocation(prog, "uTexBalance"),  texBalance);
+            gl.uniform1f(gl.getUniformLocation(prog, "uColorWeight"), colorWeight);
+            bindTexture(prog, "uTexNumber",   obj.texNumber,   0);
+            bindTexture(prog, "uTexMaterial", obj.texMaterial, 1);
+        } else {
+            bindTexture(prog, "uTexMaterial", obj.texMaterial, 0);
         }
 
-        gl.drawElements(gl.TRIANGLES,obj.indexCount,gl.UNSIGNED_SHORT,0);
+        gl.drawElements(gl.TRIANGLES, obj.indexCount, gl.UNSIGNED_SHORT, 0);
     }
 
     requestAnimationFrame(drawScene);
 }
 
-function handleKeyDown(event){
+function handleKeyDown(event) {
     const moveSpeed = 0.3;
-    const forward = getForwardVector();
-    const right = getRightVector();
+    const forward   = getForwardVector();
+    const right     = getRightVector();
 
-    switch(event.key){
-        case "w": cameraPosition = cameraPosition.map((v,i)=>v+forward[i]*moveSpeed); break;
-        case "s": cameraPosition = cameraPosition.map((v,i)=>v-forward[i]*moveSpeed); break;
-        case "a": cameraPosition[0]-=right[0]*moveSpeed; cameraPosition[2]-=right[2]*moveSpeed; break;
-        case "d": cameraPosition[0]+=right[0]*moveSpeed; cameraPosition[2]+=right[2]*moveSpeed; break;
-        case "1": shadingMode="gouraud"; break;
-        case "2": shadingMode="phong"; break;
-        case "l": lightingModel="lambert"; break;
-        case "p": lightingModel="phong"; break;
-        case "b": lightingModel="blinn"; break;
-        case "t": lightingModel="toon"; break;
-        case "ArrowUp": ambientStrength = Math.min(ambientStrength+0.05,1); break;
-        case "ArrowDown": ambientStrength = Math.max(ambientStrength-0.05,0); break;
+    switch (event.key) {
+        case "w": cameraPosition = cameraPosition.map((v, i) => v + forward[i] * moveSpeed); break;
+        case "s": cameraPosition = cameraPosition.map((v, i) => v - forward[i] * moveSpeed); break;
+        case "a": cameraPosition[0] -= right[0] * moveSpeed; cameraPosition[2] -= right[2] * moveSpeed; break;
+        case "d": cameraPosition[0] += right[0] * moveSpeed; cameraPosition[2] += right[2] * moveSpeed; break;
+        case "ArrowUp":   ambientStrength = Math.min(ambientStrength + 0.05, 1); break;
+        case "ArrowDown": ambientStrength = Math.max(ambientStrength - 0.05, 0); break;
         case "z": linearAttenuation += 0.01; break;
-        case "x": linearAttenuation = Math.max(0, linearAttenuation-0.01); break;
+        case "x": linearAttenuation = Math.max(0, linearAttenuation - 0.01); break;
         case "c": quadraticAttenuation += 0.01; break;
-        case "v": quadraticAttenuation = Math.max(0, quadraticAttenuation-0.01); break;
+        case "v": quadraticAttenuation = Math.max(0, quadraticAttenuation - 0.01); break;
+        case "n": texBalance  = Math.min(texBalance  + 0.05, 1); break; // больше номера
+        case "m": texBalance  = Math.max(texBalance  - 0.05, 0); break; // больше материала
+        case "j": colorWeight = Math.min(colorWeight + 0.05, 1); break; // больше цвета
+        case "k": colorWeight = Math.max(colorWeight - 0.05, 0); break; // меньше цвета
     }
 }
