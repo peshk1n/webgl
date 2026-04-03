@@ -158,11 +158,10 @@ function initShaders() {
         vec4 col = vec4(uObjectColor, 1.0);
 
         vec4 texBlend = mix(texMat, texNum, uTexBalance);
-        vec4 baseColor = mix(texBlend, col, uColorWeight);
+        vec4 baseColor = texBlend*mix(vec4(1.0), col, uColorWeight);
 
         vec3 ambient = uAmbientStrength * uLightColor * baseColor.rgb;
         vec3 diffuse = diff * uLightColor * baseColor.rgb;
-
         fragColor = vec4(ambient + diffuse * atten, 1.0);
     }`;
 
@@ -236,11 +235,21 @@ function loadTexture(url) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+        if (isPowerOf2(img.width) && isPowerOf2(img.height)) {
+            gl.generateMipmap(gl.TEXTURE_2D);
+        } else {
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        }
     };
-    img.onerror = () => console.warn(`Texture not found: ${url}`);
+    img.onerror = () => console.warn("Texture not found: ${url}");
     img.src = url;
     return texture;
 }
+
+function isPowerOf2(v) { return (v & (v - 1)) === 0; }
 
 
   function loadTextureByName(name) {
@@ -377,33 +386,6 @@ async function initBuffers() {
             texMaterial: loadTextureByName(obj.name),
         });
     }
-}
-
-function computeNormals(vertices, indices) {
-    const normals = new Float32Array(vertices.length);
-    for (let i = 0; i < indices.length; i += 3) {
-        const i0 = indices[i]*3, i1 = indices[i+1]*3, i2 = indices[i+2]*3;
-        const v0 = [vertices[i0],   vertices[i0+1], vertices[i0+2]];
-        const v1 = [vertices[i1],   vertices[i1+1], vertices[i1+2]];
-        const v2 = [vertices[i2],   vertices[i2+1], vertices[i2+2]];
-        const u  = v1.map((v,j) => v - v0[j]);
-        const v_ = v2.map((v,j) => v - v0[j]);
-        const n  = [
-            u[1]*v_[2] - u[2]*v_[1],
-            u[2]*v_[0] - u[0]*v_[2],
-            u[0]*v_[1] - u[1]*v_[0],
-        ];
-        for (const idx of [i0, i1, i2]) {
-            normals[idx]   += n[0];
-            normals[idx+1] += n[1];
-            normals[idx+2] += n[2];
-        }
-    }
-    for (let i = 0; i < normals.length; i += 3) {
-        const len = Math.hypot(normals[i], normals[i+1], normals[i+2]);
-        if (len > 0) { normals[i]/=len; normals[i+1]/=len; normals[i+2]/=len; }
-    }
-    return normals;
 }
 
 async function loadOBJ(url) {
