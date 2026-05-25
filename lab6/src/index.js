@@ -6,8 +6,8 @@ var shaderProgram;
 var sceneObjects = [];
 var particleSystems = [];
 
-var cameraPosition = [7, 2, -12];
-var cameraYaw = Math.PI + 0.7;
+var cameraPosition = [0, 0, 6];
+var cameraYaw = Math.PI*2;
 var cameraPitch = 0;
 var sensitivity = 0.002;
 
@@ -361,9 +361,20 @@ function drawScene(timestamp) {
         gl.drawElements(gl.TRIANGLES, obj.indexCount, gl.UNSIGNED_SHORT, 0);
     }
 
-    // ── Рендер частиц ─────────────────────────────────────────────────────────
     gl.depthMask(false);
     for (const ps of particleSystems) {
+        const type = ps instanceof FireworkInstanced ? "fireworkInstanced"
+                : ps instanceof Firework ? "firework"
+                : ps instanceof MagicTrail ? "magicTrail"
+                : ps instanceof Campfire ? "campfire"
+                : ps instanceof Sparkler ? "sparkler"
+                : ps instanceof Smoke ? "smoke"
+                : ps instanceof Steam ? "steam"
+                : ps instanceof Rain ? "rain"
+                : null;
+
+        if (type !== activeEffect) continue;  
+
         if (ps instanceof FireworkInstanced) {
             ps.update(dt, timestamp);
         } else if (ps instanceof MagicTrail) {
@@ -403,5 +414,11 @@ function handleKeyDown(event) {
             document.getElementById("instancingStatus").textContent =
                 "Instancing: " + (useInstancing ? "ON" : "OFF");
             break;
+        case "p":
+            useSprites = !useSprites;
+            document.getElementById("spriteStatus").textContent =
+            "Sprites: " + (useSprites ? "ON" : "OFF");
+            break;
         }
+            
 }

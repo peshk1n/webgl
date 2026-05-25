@@ -7,7 +7,16 @@
 let shaderParticle;       // обычный, GL_POINTS
 let shaderParticleAdd;    // аддитивный 
 let shaderParticleInst;   // инстансинг
+let shaderParticleSprNoInst;
+let shaderParticleSpr;
 let useInstancing = true;
+let useSprites = false;
+
+let activeEffect = "steam";
+
+document.getElementById("effectSelect").addEventListener("change", (e) => {
+    activeEffect = e.target.value;
+});
 
 function initParticleShaders() {
 
@@ -85,7 +94,84 @@ function initParticleShaders() {
     }`;
 
     shaderParticleInst = initShaderProgram(gl, vsInst, fsInst);
+
+    // Шейдеры для штук, которые отрисовываются спрайтами
+    const vsSpr = `#version 300 es
+    in vec2  aPosition;
+    in vec3  aOffset;
+    in vec4  aColor;
+    in float aSize;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform vec2 uScreenSize;
+
+    out vec4 vColor;
+    out vec2 vUV;
+
+    void main() {
+        vColor = aColor;
+        vUV    = aPosition + 0.5;
+
+        vec4 center = uPMatrix * uMVMatrix * vec4(aOffset, 1.0);
+        //vec2 offset = aPosition * aSize / 600.0;
+        //gl_Position = center + vec4(offset * center.w, 0.0, 0.0);
+        vec2 offset = aPosition * aSize * 2.0 / uScreenSize;
+        gl_Position = center + vec4(offset * center.w, 0.0, 0.0);
+    }`;
+
+    const fsSpr = `#version 300 es
+    precision highp float;
+    in vec4 vColor;
+    in vec2 vUV;
+    uniform sampler2D uTex;
+    out vec4 fragColor;
+
+    void main() {
+        vec4 tex = texture(uTex, vUV);
+        fragColor = vec4(vColor.rgb * tex.rgb, tex.a * vColor.a);
+    }`;
+
+    shaderParticleSpr = initShaderProgram(gl, vsSpr, fsSpr);
+
+    const vsNoInst = `#version 300 es
+    in vec2  aPosition;
+    in vec4  aColor;
+    in float aSize;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform vec3 uOffset;
+    uniform vec2 uScreenSize;
+
+    out vec4 vColor;
+    out vec2 vUV;
+
+    void main() {
+        vColor = aColor;
+        vUV    = aPosition + 0.5;
+
+        vec4 center = uPMatrix * uMVMatrix * vec4(uOffset, 1.0);
+        vec2 offset = aPosition * aSize * 2.0 / uScreenSize;
+        gl_Position = center + vec4(offset * center.w, 0.0, 0.0);
+    }`;
+
+    const fsNoInst = `#version 300 es
+    precision highp float;
+    in vec4 vColor;
+    in vec2 vUV;
+    uniform sampler2D uTex;
+    out vec4 fragColor;
+
+    void main() {
+        vec4 tex = texture(uTex, vUV);
+        fragColor = vec4(vColor.rgb * tex.rgb, tex.a * vColor.a);
+    }`;
+
+    shaderParticleSprNoInst = initShaderProgram(gl, vsNoInst, fsNoInst);
 }
+
+
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // БАЗОВЫЙ КЛАСС 
@@ -469,7 +555,8 @@ class Firework {
         ];
         this.rocketLife = 1.2 + Math.random()*0.5;
         this.particles = [];
-        this.timer = 3 + Math.random()*2; // пауза до следующего запуска
+        //this.timer = 3 + Math.random()*2; // пауза до следующего запуска
+        this.timer = 1 + Math.random(); // пауза до следующего запуска
         this.burstType  = ["sphere", "ring", "star"][Math.floor(Math.random()*3)];
         this.burstColor = [
             [1.0, 0.3, 0.1],
@@ -503,11 +590,13 @@ class Firework {
                 ];
             } else if (this.burstType === "ring") {
                 const theta = (i / count) * Math.PI * 2;
-                vel = [Math.cos(theta)*speed, (Math.random()-0.5)*0.5, Math.sin(theta)*speed];
+                vel = [Math.cos(theta)*speed, Math.sin(theta)*speed, (Math.random()-0.5)*0.5];
+                //vel = [Math.cos(theta)*speed, (Math.random()-0.5)*0.5, Math.sin(theta)*speed];
             } else {
                 const arm   = Math.floor(i / (count/5));
                 const theta = arm * (Math.PI*2/5) + (Math.random()-0.5)*0.3;
-                vel = [Math.cos(theta)*speed, (Math.random()-0.5)*speed*0.3, Math.sin(theta)*speed];
+                //vel = [Math.cos(theta)*speed, (Math.random()-0.5)*speed*0.3, Math.sin(theta)*speed];
+                vel = [Math.cos(theta)*speed, Math.sin(theta)*speed, (Math.random()-0.5)*speed*0.3];
             }
 
             this.particles.push({
@@ -664,17 +753,6 @@ class Campfire extends ParticleSystem {
         };
     }
 
-    // updateParticle(p, dt) {
-    //     const t = 1 - (p.life / p.maxLife); 
-    //     // белый - жёлтый - оранжевый - красный
-    //     p.color[0] = 1.0;
-    //     p.color[1] = Math.max(0, 1.0 - t * 1.2);
-    //     p.color[2] = Math.max(0, 0.8 - t * 0.8);
-    //     p.alpha    = (1 - t) * 0.85;
-    //     //p.size     = Math.max(1, p.size * (1 - dt * 1.5));
-    //     p.size = p._baseSize * (1.0 - (t - 0.3) * (t - 0.3) * 2.5 + 0.2);
-    //     p.size = Math.max(1, p.size);
-    // }
     updateParticle(p, dt) {
         const t = 1 - (p.life / p.maxLife);
 
@@ -835,159 +913,16 @@ class MagicTrail {
 // 8. ФЕЙЕРВЕРК С ИНСТАНСИНГОМ (доп)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// class FireworkInstanced {
-//     constructor(position) {
-//         this.origin      = [...position];
-//         this.maxParticles = 5000;
-//         this.particles   = [];
-//         this.phase       = "wait";
-//         this.timer       = 1.0;
-//         this.burstColor  = [1.0, 0.5, 0.1];
-
-//         // Квад из двух треугольников (6 вершин)
-//         this.quadBuffer = gl.createBuffer();
-//         gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
-//         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-//             -0.5,-0.5,  0.5,-0.5,  0.5, 0.5,
-//             -0.5,-0.5,  0.5, 0.5, -0.5, 0.5,
-//         ]), gl.STATIC_DRAW);
-
-//         // Инстансные буферы
-//         this.offsetBuffer = gl.createBuffer();
-//         this.iColorBuffer = gl.createBuffer();
-//         this.iSizeBuffer  = gl.createBuffer();
-
-//         this._offsets = new Float32Array(this.maxParticles * 3);
-//         this._icolors = new Float32Array(this.maxParticles * 4);
-//         this._isizes  = new Float32Array(this.maxParticles);
-
-//         // FPS замер
-//         this.fpsHistory  = [];
-//         this.fpsInterval = 0;
-//     }
-
-//     burst() {
-//         this.particles = [];
-//         const colors = [
-//             [1.0, 0.2, 0.1], [0.1, 0.5, 1.0], [0.2, 1.0, 0.3],
-//             [1.0, 0.9, 0.1], [1.0, 0.2, 0.9],
-//         ];
-//         this.burstColor = colors[Math.floor(Math.random()*colors.length)];
-
-//         for (let i = 0; i < this.maxParticles; i++) {
-//             const theta = Math.random() * Math.PI * 2;
-//             const phi   = Math.acos(2*Math.random()-1);
-//             const speed = 2 + Math.random()*5;
-//             this.particles.push({
-//                 pos:   [...this.origin],
-//                 vel:   [
-//                     Math.sin(phi)*Math.cos(theta)*speed,
-//                     Math.sin(phi)*Math.sin(theta)*speed,
-//                     Math.cos(phi)*speed,
-//                 ],
-//                 life:  1.5 + Math.random(),
-//                 color: [...this.burstColor],
-//                 alpha: 1.0,
-//                 size:  4 + Math.random()*3,
-//             });
-//         }
-//     }
-
-//     update(dt, timestamp) {
-//         // FPS замер
-//         this.fpsInterval -= dt;
-//         if (this.fpsInterval <= 0) {
-//             this.fpsInterval = 0.5;
-//             const fps = 1 / dt;
-//             this.fpsHistory.push({ t: timestamp / 1000, fps });
-//             if (this.fpsHistory.length > 60) this.fpsHistory.shift();
-//             updateFPSGraph(this.fpsHistory);
-//         }
-
-//         if (this.phase === "wait") {
-//             this.timer -= dt;
-//             if (this.timer <= 0) { this.burst(); this.phase = "burst"; }
-//             return;
-//         }
-
-//         let alive = 0;
-//         for (let i = 0; i < this.particles.length; i++) {
-//             const p = this.particles[i];
-//             p.life    -= dt;
-//             if (p.life <= 0) continue;
-//             p.vel[1]  -= 3  * dt;
-//             p.vel[0]  *= (1 - 0.6*dt);
-//             p.vel[1]  *= (1 - 0.6*dt);
-//             p.vel[2]  *= (1 - 0.6*dt);
-//             p.pos[0]  += p.vel[0]*dt;
-//             p.pos[1]  += p.vel[1]*dt;
-//             p.pos[2]  += p.vel[2]*dt;
-//             p.alpha    = Math.min(1, p.life * 0.8);
-
-//             this._offsets[alive*3]   = p.pos[0];
-//             this._offsets[alive*3+1] = p.pos[1];
-//             this._offsets[alive*3+2] = p.pos[2];
-//             this._icolors[alive*4]   = p.color[0];
-//             this._icolors[alive*4+1] = p.color[1];
-//             this._icolors[alive*4+2] = p.color[2];
-//             this._icolors[alive*4+3] = p.alpha;
-//             this._isizes[alive]      = p.size;
-//             alive++;
-//         }
-//         this.aliveCount = alive;
-
-//         if (alive === 0) { this.phase = "wait"; this.timer = 3 + Math.random()*2; }
-
-//         gl.bindBuffer(gl.ARRAY_BUFFER, this.offsetBuffer);
-//         gl.bufferData(gl.ARRAY_BUFFER, this._offsets.subarray(0, alive*3), gl.DYNAMIC_DRAW);
-//         gl.bindBuffer(gl.ARRAY_BUFFER, this.iColorBuffer);
-//         gl.bufferData(gl.ARRAY_BUFFER, this._icolors.subarray(0, alive*4), gl.DYNAMIC_DRAW);
-//         gl.bindBuffer(gl.ARRAY_BUFFER, this.iSizeBuffer);
-//         gl.bufferData(gl.ARRAY_BUFFER, this._isizes.subarray(0, alive), gl.DYNAMIC_DRAW);
-//     }
-
-//     draw(mvMatrix, prMatrix) {
-//         if (this.phase !== "burst" || !this.aliveCount) return;
-
-//         const prog = shaderParticleInst;
-//         gl.useProgram(prog);
-//         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-//         gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uMVMatrix"), false, mvMatrix);
-//         gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uPMatrix"),  false, prMatrix);
-
-//         const bindA = (name, buf, size, divisor) => {
-//             const loc = gl.getAttribLocation(prog, name);
-//             if (loc < 0) return;
-//             gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-//             gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
-//             gl.enableVertexAttribArray(loc);
-//             gl.vertexAttribDivisor(loc, divisor);
-//         };
-
-//         bindA("aPosition", this.quadBuffer,    2, 0); // per-vertex
-//         bindA("aOffset",   this.offsetBuffer,  3, 1); // per-instance
-//         bindA("aColor",    this.iColorBuffer,  4, 1);
-//         bindA("aSize",     this.iSizeBuffer,   1, 1);
-
-//         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.aliveCount);
-
-//         // Сбрасываем divisor чтобы не сломать другие draw calls
-//         ["aPosition","aOffset","aColor","aSize"].forEach(name => {
-//             const loc = gl.getAttribLocation(prog, name);
-//             if (loc >= 0) gl.vertexAttribDivisor(loc, 0);
-//         });
-//     }
-// }
-
 class FireworkInstanced {
     constructor(position) {
         this.origin = [...position];
         this.maxParticles = 10000,// 5000;
         this.particles = [];
         this.phase = "wait";
-        this.timer = 1.0;
+        this.timer = 0.5;
         this.burstColor= [1.0, 0.5, 0.1];
         this.aliveCount= 0;
+        this.texture = loadTexture("src/textures/star.png");
 
         this.quadBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
@@ -1101,7 +1036,10 @@ class FireworkInstanced {
         }
         this.aliveCount = alive;
 
-        if (alive === 0) { this.phase = "wait"; this.timer = 3 + Math.random()*2; }
+        if (alive === 0) { 
+            this.phase = "wait"; 
+            this.timer = 1 + Math.random(); 
+        }
 
         // bufferSubData — не пересоздаём буфер, только обновляем данные
         const n3 = alive * 3;
@@ -1128,20 +1066,32 @@ class FireworkInstanced {
 
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
 
-        if (useInstancing) {
-            this._drawInstanced(mvMatrix, prMatrix);
+         if (useInstancing) {
+            this._drawInstanced(mvMatrix, prMatrix);  // квады, с текстурой или без
+        } else if (useSprites) {
+            this._drawSpritesNoInstancing(mvMatrix, prMatrix);  // спрайты без инстансинга
         } else {
-            this._drawPoints(mvMatrix, prMatrix);
+            this._drawPoints(mvMatrix, prMatrix);  // GL_POINTS
         }
     }
 
     _drawInstanced(mvMatrix, prMatrix) {
-        const prog = shaderParticleInst;
+        const prog = useSprites ? shaderParticleSpr : shaderParticleInst;
         gl.useProgram(prog);
         gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uMVMatrix"), false, mvMatrix);
         gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uPMatrix"),  false, prMatrix);
-        gl.uniform2f(gl.getUniformLocation(prog, "uScreenSize"),
-            gl.drawingBufferWidth, gl.drawingBufferHeight);
+
+        gl.uniform2f(
+            gl.getUniformLocation(prog, "uScreenSize"),
+            gl.drawingBufferWidth,
+            gl.drawingBufferHeight
+        );
+
+        if (useSprites) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.uniform1i(gl.getUniformLocation(prog, "uTex"), 0);
+        }
 
         const bindA = (name, buf, size, divisor) => {
             const loc = gl.getAttribLocation(prog, name);
@@ -1185,6 +1135,58 @@ class FireworkInstanced {
 
         gl.drawArrays(gl.POINTS, 0, this.aliveCount);
     }
+
+
+    _drawSpritesNoInstancing(mvMatrix, prMatrix) {
+        const prog = shaderParticleSprNoInst;
+        gl.useProgram(prog);
+        gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uMVMatrix"), false, mvMatrix);
+        gl.uniformMatrix4fv(gl.getUniformLocation(prog, "uPMatrix"),  false, prMatrix);
+        gl.uniform2f(gl.getUniformLocation(prog, "uScreenSize"),
+            gl.drawingBufferWidth, gl.drawingBufferHeight);
+
+        gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, this.texture);
+        gl.uniform1i(gl.getUniformLocation(prog, "uTex"), 0);
+
+        // Биндим квад один раз
+        const posLoc   = gl.getAttribLocation(prog, "aPosition");
+        const colorLoc = gl.getAttribLocation(prog, "aColor");
+        const sizeLoc  = gl.getAttribLocation(prog, "aSize");
+
+        if (posLoc >= 0) {
+            gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(posLoc);
+        }
+
+        const offsetLoc = gl.getUniformLocation(prog, "uOffset");
+
+        // Отдельный draw call на каждую частицу
+        for (let i = 0; i < this.aliveCount; i++) {
+            // Передаём позицию, цвет и размер через uniform
+            gl.uniform3f(offsetLoc,
+                this._offsets[i*3],
+                this._offsets[i*3+1],
+                this._offsets[i*3+2]);
+
+            // Цвет и размер тоже через uniform — aColor и aSize не инстансные
+            if (colorLoc >= 0) {
+                gl.disableVertexAttribArray(colorLoc);
+                gl.vertexAttrib4f(colorLoc,
+                    this._icolors[i*4],
+                    this._icolors[i*4+1],
+                    this._icolors[i*4+2],
+                    this._icolors[i*4+3]);
+            }
+            if (sizeLoc >= 0) {
+                gl.disableVertexAttribArray(sizeLoc);
+                gl.vertexAttrib1f(sizeLoc, this._isizes[i]);
+            }
+
+            gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1198,7 +1200,7 @@ function initFPSGraph() {
     fpsCanvas.width  = 300;
     fpsCanvas.height = 100;
     Object.assign(fpsCanvas.style, {
-        position: "fixed", top: "10px", left: "10px",
+        position: "fixed", bottom: "10px", left: "10px",
         background: "rgba(0,0,0,0.6)", borderRadius: "6px",
         zIndex: 999,
     });
@@ -1291,19 +1293,19 @@ function updateFPSGraph(history) {
 
 function initParticleSystems() {
     initParticleShaders();
-   // initFPSGraph();
+    initFPSGraph();
 
     particleSystems.push(new Sparkler([ 0.0, 0.0,  0.0]));
-    particleSystems.push(new Smoke([-3.0, 0.0,  0.0]));
+    particleSystems.push(new Smoke([0.0, 0.0,  0.0]));
     particleSystems.push(new Rain([ 0.0, 0.0,  0.0]));
-    particleSystems.push(new Steam([ 3.0, 0.0,  0.0]));
-    particleSystems.push(new Campfire([-2.0, -0.2, 0.0]));
-    //particleSystems.push(new MagicTrail());
+    particleSystems.push(new Steam([ 0.0, 0.0,  0.0]));
+    particleSystems.push(new Campfire([0.0, 0, 0.0]));
+    particleSystems.push(new MagicTrail());
 
     // фейерверки
-    particleSystems.push(new Firework([-4.0, 0.0,  0.0]));
-    particleSystems.push(new Firework([ 4.0, 0.0,  0.0]));
-    particleSystems.push(new Firework([ 0.0, 0.0, -4.0]));
+    particleSystems.push(new Firework([0.0, -13.0,  -7.0]));
+    particleSystems.push(new Firework([ 0.0, -13.0,  -7.0]));
+    particleSystems.push(new Firework([ 0.0, -13.0, -7.0]));
 
-    //particleSystems.push(new FireworkInstanced([ 0.0, 20.0,  4.0]));
+    particleSystems.push(new FireworkInstanced([ 0.0, 0.0,  -7.0]));
 }

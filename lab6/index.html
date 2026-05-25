@@ -30,6 +30,43 @@
     pointer-events: none;
 ">Instancing: ON</div>
 
+<div id="spriteStatus" style="
+    position: fixed;
+    top: 48px;
+    right: 16px;
+    color: white;
+    font-family: monospace;
+    font-size: 14px;
+    background: rgba(0,0,0,0.5);
+    padding: 6px 12px;
+    border-radius: 6px;
+    pointer-events: none;
+">Sprites: OFF</div>
+
+<select id="effectSelect" style="
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 999;
+    font-family: monospace;
+    font-size: 14px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+">
+    <option value="steam">Облако</option>
+    <option value="smoke">Дым</option>
+    <option value="campfire">Костёр</option>
+    <option value="rain">Дождь</option>
+    <option value="sparkler">Бенгальский огонь</option>
+    <option value="firework">Фейерверк</option>
+    <option value="fireworkInstanced">Фейерверк (инстансинг)</option>
+    <option value="magicTrail">Магический след</option>
+</select>
+
 <!-- <canvas id="glcanvas" width="1000" height="500"></canvas> -->
 <canvas id="glcanvas" width="1200" height="600"></canvas>
 
