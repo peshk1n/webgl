@@ -1,0 +1,9 @@
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/CMakeFiles/glad_loader.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/CMakeFiles/Lab8_TerrainTessellation.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/CMakeFiles/ALL_BUILD.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/CMakeFiles/ZERO_CHECK.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-build/CMakeFiles/ALL_BUILD.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-build/src/CMakeFiles/update_mappings.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-build/src/CMakeFiles/glfw.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-build/CMakeFiles/ALL_BUILD.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-build/glm/CMakeFiles/glm.dir

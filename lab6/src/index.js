@@ -19,7 +19,7 @@ let quadraticAttenuation = 0.032;
 
 let isMouseDown = false;
 let lastMouseX = 0, lastMouseY = 0;
-let mouseX = 0, mouseY = 0; // для магического следа
+let mouseX = 0, mouseY = 0; 
 
 let lastTime = 0; // для deltaTime
 
@@ -64,14 +64,13 @@ function start() {
 }
 
 function handleMouseMove(e) {
-    // Запоминаем позицию мыши для магического следа
     mouseX = e.clientX;
     mouseY = e.clientY;
 
     if (!isMouseDown) return;
     const dx = e.clientX - lastMouseX;
     const dy = e.clientY - lastMouseY;
-    cameraYaw   += dx * sensitivity;
+    cameraYaw += dx * sensitivity;
     cameraPitch -= dy * sensitivity;
     const maxPitch = Math.PI / 2 - 0.01;
     cameraPitch = Math.max(-maxPitch, Math.min(maxPitch, cameraPitch));
@@ -130,9 +129,9 @@ function initShaders() {
     out vec2 vTexCoord;
 
     void main() {
-        vFragPos    = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
-        vNormal     = mat3(uMVMatrix) * aVertexNormal;
-        vTexCoord   = aTexCoord;
+        vFragPos = vec3(uMVMatrix * vec4(aVertexPosition, 1.0));
+        vNormal = mat3(uMVMatrix) * aVertexNormal;
+        vTexCoord = aTexCoord;
         gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
     }`;
 
@@ -154,12 +153,12 @@ function initShaders() {
     out vec4 fragColor;
 
     void main() {
-        vec3  norm     = normalize(vNormal);
+        vec3  norm = normalize(vNormal);
         vec3  lightDir = normalize(uLightPos - vFragPos);
-        float diff     = max(dot(norm, lightDir), 0.0);
-        float dist     = length(uLightPos - vFragPos);
-        float atten    = 1.0 / (1.0
-            + uLinearAttenuation    * dist
+        float diff = max(dot(norm, lightDir), 0.0);
+        float dist = length(uLightPos - vFragPos);
+        float atten = 1.0 / (1.0
+            + uLinearAttenuation * dist
             + uQuadraticAttenuation * dist * dist);
 
         vec4 texColor = texture(uTexMaterial, vTexCoord);
@@ -327,9 +326,9 @@ function drawScene(timestamp) {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    const prMatrix     = createProjectionMatrix();
-    const mvMatrix     = mat4.create();
-    const forward      = getForwardVector();
+    const prMatrix = createProjectionMatrix();
+    const mvMatrix = mat4.create();
+    const forward = getForwardVector();
     const cameraTarget = cameraPosition.map((v, i) => v + forward[i]);
     mat4.lookAt(mvMatrix, cameraPosition, cameraTarget, [0, 1, 0]);
 
@@ -389,7 +388,7 @@ function drawScene(timestamp) {
     requestAnimationFrame(drawScene);
 }
 
-// Заглушка — системы частиц добавим в следующем файле
+// Заглушка для системы частиц
 function initParticleSystems() {}
 
 function handleKeyDown(event) {

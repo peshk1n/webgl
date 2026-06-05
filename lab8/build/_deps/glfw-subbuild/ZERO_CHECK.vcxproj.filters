@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glfw-subbuild\CMakeFiles\aa2cf905778fa2e4b9058b6fb6a2c069\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{AE8D9DA0-3C4E-3B28-8459-662C0C949341}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

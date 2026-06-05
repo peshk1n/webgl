@@ -1,0 +1,3 @@
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/glfw-populate.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/ALL_BUILD.dir
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/ZERO_CHECK.dir

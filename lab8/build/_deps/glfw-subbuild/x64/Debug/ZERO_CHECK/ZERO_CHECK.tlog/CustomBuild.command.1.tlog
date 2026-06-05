@@ -1,0 +1,10 @@
+^D:\USERS\ANNA\VSCODEPROJECTS\WEBGL\LAB8\BUILD\_DEPS\GLFW-SUBBUILD\CMAKEFILES\AA2CF905778FA2E4B9058B6FB6A2C069\GENERATE.STAMP.RULE
+setlocal
+D:\src\vcpkg\downloads\tools\cmake-3.22.2-windows\cmake-3.22.2-windows-i386\bin\cmake.exe -SD:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild -BD:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/glfw-populate.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

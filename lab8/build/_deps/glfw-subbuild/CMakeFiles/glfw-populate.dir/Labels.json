@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/glfw-populate"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/aa2cf905778fa2e4b9058b6fb6a2c069/glfw-populate.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/ca54dea9970bffa01c00dfb19995037f/glfw-populate-complete.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-build.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-configure.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-download.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-install.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-mkdir.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-patch.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-test.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/521bcfa96fa30828b218b19c62d38773/glfw-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"glfw-populate"
+		],
+		"name" : "glfw-populate"
+	}
+}

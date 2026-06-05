@@ -1,0 +1,10 @@
+^D:\USERS\ANNA\VSCODEPROJECTS\WEBGL\LAB8\BUILD\_DEPS\GLFW-SRC\SRC\CMAKELISTS.TXT
+setlocal
+D:\src\vcpkg\downloads\tools\cmake-3.22.2-windows\cmake-3.22.2-windows-i386\bin\cmake.exe -SD:/Users/Anna/VSCodeProjects/webgl/lab8 -BD:/Users/Anna/VSCodeProjects/webgl/lab8/build --check-stamp-file D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-build/src/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

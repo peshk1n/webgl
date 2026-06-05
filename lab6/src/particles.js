@@ -3,7 +3,6 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // ШЕЙДЕРЫ ДЛЯ ЧАСТИЦ
 // ═══════════════════════════════════════════════════════════════════════════════
-
 let shaderParticle;       // обычный, GL_POINTS
 let shaderParticleAdd;    // аддитивный 
 let shaderParticleInst;   // инстансинг
@@ -43,9 +42,10 @@ function initParticleShaders() {
     out vec4 fragColor;
 
     void main() {
-        // круг
-        vec2  c = gl_PointCoord - 0.5;
+        // координаты текущего пикселя внутри point, центр в 0 0
+        vec2  c = gl_PointCoord - 0.5; 
         float dist = length(c);
+        // круг
         if (dist > 0.5) discard;
         float alpha = (1.0 - dist * 2.0) * vColor.a;
         fragColor = vec4(vColor.rgb, alpha);
@@ -70,7 +70,7 @@ function initParticleShaders() {
 
     void main() {
         vColor = aColor;
-        vUV    = aPosition + 0.5;
+        vUV = aPosition + 0.5;
 
         vec4 center = uPMatrix * uMVMatrix * vec4(aOffset, 1.0);
         // vec2 offset = aPosition * aSize * 0.01;
@@ -95,7 +95,7 @@ function initParticleShaders() {
 
     shaderParticleInst = initShaderProgram(gl, vsInst, fsInst);
 
-    // Шейдеры для штук, которые отрисовываются спрайтами
+    // Шейдеры для спрайтов 
     const vsSpr = `#version 300 es
     in vec2  aPosition;
     in vec3  aOffset;
@@ -149,7 +149,7 @@ function initParticleShaders() {
 
     void main() {
         vColor = aColor;
-        vUV    = aPosition + 0.5;
+        vUV = aPosition + 0.5;
 
         vec4 center = uPMatrix * uMVMatrix * vec4(uOffset, 1.0);
         vec2 offset = aPosition * aSize * 2.0 / uScreenSize;
@@ -300,26 +300,6 @@ class Sparkler extends ParticleSystem {
         });
     }
 
-    // spawnParticle() {
-    //     const angle  = Math.random() * Math.PI * 2;
-    //     const speed  = 1.5 + Math.random() * 2.5;
-    //     const spread = 0.4;
-    //     const life = 0.3 + Math.random() * 0.5;
-    //     return {
-    //         pos:     [...this.position],
-    //         vel:     [
-    //             Math.cos(angle) * speed * spread + (Math.random()-0.5)*0.5,
-    //             Math.sin(angle) * speed * spread + 1.0 + Math.random(),
-    //             (Math.random()-0.5) * spread,
-    //         ],
-    //         life: life,
-    //         maxLife: life, // 0.8
-    //         color:   [1.0, 0.95, 0.7],
-    //         alpha:   1.0,
-    //         size:    4 + Math.random() * 4,
-    //     };
-    // }
-
     spawnParticle() {
         const angle = Math.random() * Math.PI * 2;
         const elev  = (Math.random()-0.5) * Math.PI; // вверх/вниз
@@ -342,15 +322,6 @@ class Sparkler extends ParticleSystem {
         };
     }
 
-    // updateParticle(p, dt) {
-    //     const t = 1 - p.life / p.maxLife; // 0..1
-    //     // Цвет: белый - жёлтый - оранжевый - красный
-    //     p.color[0] = 1.0;
-    //     p.color[1] = Math.max(0, 0.95 - t * 0.8);
-    //     p.color[2] = Math.max(0, 0.7  - t * 0.7);
-    //     p.alpha    = Math.min(1.0, p.life * 2.5);
-    //     p.size     = Math.max(1, p.size - dt * 8);
-    // }
     updateParticle(p, dt) {
         const t = 1 - p.life / p.maxLife;
 
@@ -371,13 +342,6 @@ class Sparkler extends ParticleSystem {
 class Smoke extends ParticleSystem {
     constructor(position) {
         super({
-            // position,
-            // maxParticles: 200,
-            // spawnRate:    20,
-            // gravity:      0.3,  // лёгкий подъём
-            // wind:         [0.2, 0, 0],
-            // damping:      0.8,
-            // additive:     false,
             position,
             maxParticles: 350,
             spawnRate: 35,
@@ -457,7 +421,7 @@ class Rain extends ParticleSystem {
             maxLife: 3.0,
             color: [0.7, 0.85, 1.0],
             alpha: 0.6,
-            size: 4, //2.5,
+            size: 8, //2.5,
         };
     }
 
@@ -519,9 +483,6 @@ class Steam extends ParticleSystem {
     updateParticle(p, dt) {
         const age = p.maxLife - p.life;         
         const t = age / p.maxLife;             
-
-        //p.alpha = 0.30 * Math.sin(Math.PI * Math.pow(t, 0.4));
-        //p.alpha = (p._maxAlpha ?? 0.12) * Math.sin(Math.PI * Math.pow(t, 0.4));
 
         const edgeBoost = 0.5 + 0.5 * p._edgeFactor;  // центр тусклее
         p.alpha = 0.10 * edgeBoost * Math.sin(Math.PI * Math.pow(t, 0.4));
@@ -1023,15 +984,15 @@ class FireworkInstanced {
             p.pos[2] += p.vel[2]*dt;
             p.alpha   = Math.min(1, p.life * 0.8);
 
-            // Данные одинаковые для обоих режимов — пишем один раз
-            this._offsets[alive*3]   = p.pos[0];
+            // Данные одинаковые для обоих 
+            this._offsets[alive*3] = p.pos[0];
             this._offsets[alive*3+1] = p.pos[1];
             this._offsets[alive*3+2] = p.pos[2];
-            this._icolors[alive*4]   = p.color[0];
+            this._icolors[alive*4] = p.color[0];
             this._icolors[alive*4+1] = p.color[1];
             this._icolors[alive*4+2] = p.color[2];
             this._icolors[alive*4+3] = p.alpha;
-            this._isizes[alive]      = p.size;
+            this._isizes[alive] = p.size;
             alive++;
         }
         this.aliveCount = alive;
@@ -1041,7 +1002,6 @@ class FireworkInstanced {
             this.timer = 1 + Math.random(); 
         }
 
-        // bufferSubData — не пересоздаём буфер, только обновляем данные
         const n3 = alive * 3;
         const n4 = alive * 4;
 
@@ -1052,7 +1012,7 @@ class FireworkInstanced {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iSizeBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, this._isizes.subarray(0, alive));
 
-        // Те же буферы используем для GL_POINTS — данные идентичны
+        // для GL_POINTS
         gl.bindBuffer(gl.ARRAY_BUFFER, this.posBuffer);
         gl.bufferSubData(gl.ARRAY_BUFFER, 0, this._offsets.subarray(0, n3));
         gl.bindBuffer(gl.ARRAY_BUFFER, this.colorBuffer);
@@ -1067,9 +1027,9 @@ class FireworkInstanced {
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
 
          if (useInstancing) {
-            this._drawInstanced(mvMatrix, prMatrix);  // квады, с текстурой или без
+            this._drawInstanced(mvMatrix, prMatrix);  
         } else if (useSprites) {
-            this._drawSpritesNoInstancing(mvMatrix, prMatrix);  // спрайты без инстансинга
+            this._drawSpritesNoInstancing(mvMatrix, prMatrix);  
         } else {
             this._drawPoints(mvMatrix, prMatrix);  // GL_POINTS
         }
@@ -1102,10 +1062,10 @@ class FireworkInstanced {
             gl.vertexAttribDivisor(loc, divisor);
         };
 
-        bindA("aPosition", this.quadBuffer,    2, 0);
-        bindA("aOffset",   this.offsetBuffer,  3, 1);
-        bindA("aColor",    this.iColorBuffer,  4, 1);
-        bindA("aSize",     this.iSizeBuffer,   1, 1);
+        bindA("aPosition", this.quadBuffer, 2, 0);
+        bindA("aOffset", this.offsetBuffer, 3, 1);
+        bindA("aColor", this.iColorBuffer, 4, 1);
+        bindA("aSize", this.iSizeBuffer, 1, 1);
 
         gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, this.aliveCount);
 
@@ -1130,8 +1090,8 @@ class FireworkInstanced {
         };
 
         bindA("aPosition", this.posBuffer,   3);
-        bindA("aColor",    this.colorBuffer, 4);
-        bindA("aSize",     this.sizeBuffer,  1);
+        bindA("aColor", this.colorBuffer, 4);
+        bindA("aSize", this.sizeBuffer,  1);
 
         gl.drawArrays(gl.POINTS, 0, this.aliveCount);
     }
@@ -1149,10 +1109,9 @@ class FireworkInstanced {
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
         gl.uniform1i(gl.getUniformLocation(prog, "uTex"), 0);
 
-        // Биндим квад один раз
-        const posLoc   = gl.getAttribLocation(prog, "aPosition");
+        const posLoc = gl.getAttribLocation(prog, "aPosition");
         const colorLoc = gl.getAttribLocation(prog, "aColor");
-        const sizeLoc  = gl.getAttribLocation(prog, "aSize");
+        const sizeLoc = gl.getAttribLocation(prog, "aSize");
 
         if (posLoc >= 0) {
             gl.bindBuffer(gl.ARRAY_BUFFER, this.quadBuffer);
@@ -1162,15 +1121,13 @@ class FireworkInstanced {
 
         const offsetLoc = gl.getUniformLocation(prog, "uOffset");
 
-        // Отдельный draw call на каждую частицу
+        // draw call на каждую частицу
         for (let i = 0; i < this.aliveCount; i++) {
-            // Передаём позицию, цвет и размер через uniform
             gl.uniform3f(offsetLoc,
                 this._offsets[i*3],
                 this._offsets[i*3+1],
                 this._offsets[i*3+2]);
 
-            // Цвет и размер тоже через uniform — aColor и aSize не инстансные
             if (colorLoc >= 0) {
                 gl.disableVertexAttribArray(colorLoc);
                 gl.vertexAttrib4f(colorLoc,
@@ -1248,44 +1205,6 @@ function updateFPSGraph(history) {
     fpsCtx.font = "bold 14px monospace";
     fpsCtx.fillText(`${cur} FPS`, 8, 16);
 }
-
-// function updateFPSGraph(history) {
-//     if (!fpsCtx) return;
-//     const W = fpsCanvas.width, H = fpsCanvas.height;
-//     fpsCtx.clearRect(0, 0, W, H);
-
-//     // Сетка
-//     fpsCtx.strokeStyle = "rgba(255,255,255,0.1)";
-//     fpsCtx.lineWidth = 1;
-//     [30, 60, 90, 120].forEach(fps => {
-//         const y = H - (fps / 140) * H;
-//         fpsCtx.beginPath();
-//         fpsCtx.moveTo(0, y); fpsCtx.lineTo(W, y);
-//         fpsCtx.stroke();
-//         fpsCtx.fillStyle = "rgba(255,255,255,0.4)";
-//         fpsCtx.font = "9px monospace";
-//         fpsCtx.fillText(fps, 2, y - 2);
-//     });
-
-//     if (history.length < 2) return;
-
-//     // Линия FPS
-//     fpsCtx.beginPath();
-//     fpsCtx.strokeStyle = "#4fc";
-//     fpsCtx.lineWidth   = 2;
-//     history.forEach((h, i) => {
-//         const x = (i / (history.length-1)) * W;
-//         const y = H - Math.min(h.fps / 140, 1) * H;
-//         i === 0 ? fpsCtx.moveTo(x, y) : fpsCtx.lineTo(x, y);
-//     });
-//     fpsCtx.stroke();
-
-//     // Текущий FPS
-//     const cur = Math.round(history[history.length-1].fps);
-//     fpsCtx.fillStyle = cur > 55 ? "#4fc" : cur > 30 ? "#fa0" : "#f44";
-//     fpsCtx.font = "bold 14px monospace";
-//     fpsCtx.fillText(`${cur} FPS (instanced 5k)`, 8, 16);
-// }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ИНИЦИАЛИЗАЦИЯ

@@ -1,0 +1,15 @@
+# CMake generation dependency list for this directory.
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeFiles/3.22.2/CMakeSystem.cmake
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/CMakeLists.txt
+D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glfw-subbuild/glfw-populate-prefix/tmp/glfw-populate-cfgcmd.txt.in
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/CMakeDetermineSystem.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/CMakeGenericSystem.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/CMakeSystem.cmake.in
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/ExternalProject-gitupdate.cmake.in
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/ExternalProject.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/Platform/Windows.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/Platform/WindowsPaths.cmake
+D:/src/vcpkg/downloads/tools/cmake-3.22.2-windows/cmake-3.22.2-windows-i386/share/cmake-3.22/Modules/RepositoryInfo.txt.in

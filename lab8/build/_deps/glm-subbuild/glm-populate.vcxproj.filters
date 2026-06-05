@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-mkdir.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-download.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-update.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-patch.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-configure.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-build.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-install.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\8d2f98de1e3d2e6cef03dde686cb639d\glm-populate-test.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\cecfa41006607e34f497b6c4d4f30f68\glm-populate-complete.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\5b708dbd1b64d665e659fc3ee00c7fd9\glm-populate.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="D:\Users\Anna\VSCodeProjects\webgl\lab8\build\_deps\glm-subbuild\CMakeFiles\glm-populate" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{CD56F3AF-879B-368E-91E9-0526B5F584B4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

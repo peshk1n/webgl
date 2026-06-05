@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/glm-populate"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/5b708dbd1b64d665e659fc3ee00c7fd9/glm-populate.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/cecfa41006607e34f497b6c4d4f30f68/glm-populate-complete.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-build.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-configure.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-download.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-install.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-mkdir.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-patch.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-test.rule"
+		},
+		{
+			"file" : "D:/Users/Anna/VSCodeProjects/webgl/lab8/build/_deps/glm-subbuild/CMakeFiles/8d2f98de1e3d2e6cef03dde686cb639d/glm-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"glm-populate"
+		],
+		"name" : "glm-populate"
+	}
+}

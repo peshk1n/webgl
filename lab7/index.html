@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WebGL Lab 7 — Post-Processing Pipeline</title>
+<style>
+  body { margin: 0; overflow: hidden; font-family: 'Segoe UI', monospace; }
+  #glcanvas {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+
+  #uiPanel {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 280px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    background: rgba(10, 10, 15, 0.88);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: #ccc;
+    font-size: 13px;
+    z-index: 999;
+    backdrop-filter: blur(6px);
+    user-select: none;
+  }
+
+  #uiPanel h3 {
+    margin: 0 0 6px 0;
+    color: #fff;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+  #uiPanel .section {
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 10px;
+  }
+  #uiPanel .section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .section-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    color: #e0e0e0;
+    font-weight: 600;
+    font-size: 13px;
+    transition: color 0.2s;
+  }
+  .section-header:hover { color: #fff; }
+  .section-header .arrow { font-size: 10px; transition: transform 0.2s; display: inline-block; width: 12px; }
+  .section-header.collapsed .arrow { transform: rotate(-90deg); }
+  .section-body { margin-top: 6px; padding-left: 2px; }
+  .section-header.collapsed + .section-body { display: none; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    gap: 8px;
+  }
+  .row label { flex-shrink: 0; font-size: 12px; color: #aaa; min-width: 55px; }
+  .row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    outline: none;
+  }
+  .row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #6af;
+    cursor: pointer;
+    border: none;
+  }
+  .row .val {
+    width: 32px;
+    text-align: right;
+    font-size: 11px;
+    color: #8af;
+    flex-shrink: 0;
+  }
+  .row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: #6af;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  #infoBar {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 4px;
+  }
+  #infoBar span { color: #8af; font-weight: 600; }
+</style>
+</head>
+
+<body onload="start();">
+
+<canvas id="glcanvas" width="1200" height="600"></canvas>
+
+<div id="fpsOverlay" style="
+    position: fixed;
+    bottom: 48px;
+    left: 16px;
+    color: #8af;
+    font-family: monospace;
+    font-size: 18px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.55);
+    padding: 8px 16px;
+    border-radius: 8px;
+    z-index: 999;
+    pointer-events: none;
+    letter-spacing: 1px;
+">
+    FPS: <span id="fpsDisplay">--</span>
+</div>
+
+<div id="uiPanel">
+  <h3>&#9881; Post-Processing</h3>
+
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> Bloom
+    </div>
+    <div class="section-body">
+      <div class="row"><label>Enable</label><input type="checkbox" id="bloomEnable" checked></div>
+      <div class="row"><label>Intensity</label><input type="range" id="bloomIntensity" min="0" max="200" value="100" step="1"><span class="val" id="bloomIntensityVal">1.00</span></div>
+      <div class="row"><label>Threshold</label><input type="range" id="bloomThreshold" min="10" max="100" value="70" step="1"><span class="val" id="bloomThresholdVal">0.70</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> Vignette
+    </div>
+    <div class="section-body">
+      <div class="row"><label>Enable</label><input type="checkbox" id="vignetteEnable" checked></div>
+      <div class="row"><label>Intensity</label><input type="range" id="vignetteIntensity" min="0" max="100" value="40" step="1"><span class="val" id="vignetteIntensityVal">0.40</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> Grain
+    </div>
+    <div class="section-body">
+      <div class="row"><label>Enable</label><input type="checkbox" id="grainEnable" checked></div>
+      <div class="row"><label>Intensity</label><input type="range" id="grainIntensity" min="0" max="100" value="12" step="1"><span class="val" id="grainIntensityVal">0.12</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> Depth of Field
+    </div>
+    <div class="section-body">
+      <div class="row"><label>Enable</label><input type="checkbox" id="dofEnable" checked></div>
+      <div class="row"><label>Focus Dist</label><input type="range" id="dofFocusDist" min="10" max="2500" value="950" step="1"><span class="val" id="dofFocusDistVal">9.50</span></div>
+      <div class="row"><label>Blur Str</label><input type="range" id="dofBlurStr" min="0" max="500" value="40" step="1"><span class="val" id="dofBlurStrVal">0.40</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> Color Grading (LUT)
+    </div>
+    <div class="section-body">
+      <div class="row"><label>Enable</label><input type="checkbox" id="lutEnable" checked></div>
+      <div class="row"><label>Intensity</label><input type="range" id="lutIntensity" min="0" max="100" value="70" step="1"><span class="val" id="lutIntensityVal">0.70</span></div>
+    </div>
+  </div>
+
+  <div class="section" style="border-bottom: none; margin-bottom: 4px;">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="arrow">&#9660;</span> Animation
+    </div>
+    <div class="section-body">
+      <div class="row"><label>Auto Pulse</label><input type="checkbox" id="animPulse"></div>
+    </div>
+  </div>
+
+  <div style="height: 12px;"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"></script>
+<script src="src/scene.js"></script>
+<script src="src/renderer.js"></script>
+<script src="src/postprocess.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/main.js"></script>
+
+<script>
+function toggleSection(el) { el.classList.toggle('collapsed'); }
+</script>
+
+</body>
+</html>
