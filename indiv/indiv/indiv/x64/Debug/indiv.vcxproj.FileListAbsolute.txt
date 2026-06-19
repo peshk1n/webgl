@@ -1,0 +1,2 @@
+D:\Users\Anna\source\repos\cg\indiv\indiv\x64\Debug\glfw3.dll
+D:\Users\Anna\source\repos\cg\indiv\indiv\indiv\x64\Debug\indiv.vcxproj.Up2Date

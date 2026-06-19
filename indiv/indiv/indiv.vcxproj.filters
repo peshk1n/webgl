@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Исходные файлы">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Файлы заголовков">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Файлы ресурсов">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Исходные файлы\engine">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\game">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Исходные файлы\network">
+      <UniqueIdentifier>{C3D4E5F6-A7B8-9012-CDEF-123456789012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\engine">
+      <UniqueIdentifier>{D4E5F6A7-B8C9-0123-DEF1-234567890123}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\game">
+      <UniqueIdentifier>{E5F6A7B8-C9D0-1234-EF12-345678901234}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Файлы заголовков\network">
+      <UniqueIdentifier>{F6A7B8C9-D0E1-2345-F123-456789012345}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Shader.cpp">
+      <Filter>Исходные файлы\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Mesh.cpp">
+      <Filter>Исходные файлы\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Texture.cpp">
+      <Filter>Исходные файлы\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\engine\Camera.cpp">
+      <Filter>Исходные файлы\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\Ball.cpp">
+      <Filter>Исходные файлы\game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\Paddle.cpp">
+      <Filter>Исходные файлы\game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\Court.cpp">
+      <Filter>Исходные файлы\game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\Score.cpp">
+      <Filter>Исходные файлы\game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\game\Game.cpp">
+      <Filter>Исходные файлы\game</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\Server.cpp">
+      <Filter>Исходные файлы\network</Filter>
+    </ClCompile>
+    <ClCompile Include="src\network\Client.cpp">
+      <Filter>Исходные файлы\network</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\engine\Shader.h">
+      <Filter>Файлы заголовков\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\Mesh.h">
+      <Filter>Файлы заголовков\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\Texture.h">
+      <Filter>Файлы заголовков\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\Camera.h">
+      <Filter>Файлы заголовков\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\engine\stb_image.h">
+      <Filter>Файлы заголовков\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\Ball.h">
+      <Filter>Файлы заголовков\game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\Paddle.h">
+      <Filter>Файлы заголовков\game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\Court.h">
+      <Filter>Файлы заголовков\game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\Score.h">
+      <Filter>Файлы заголовков\game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\game\Game.h">
+      <Filter>Файлы заголовков\game</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\Protocol.h">
+      <Filter>Файлы заголовков\network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\Server.h">
+      <Filter>Файлы заголовков\network</Filter>
+    </ClInclude>
+    <ClInclude Include="src\network\Client.h">
+      <Filter>Файлы заголовков\network</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="vcpkg.json" />
+  </ItemGroup>
+</Project>
