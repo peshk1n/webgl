@@ -1,0 +1,69 @@
+# =========================
+# Build directories
+# =========================
+build/
+cmake-build-*/
+out/
+bin/
+obj/
+
+# =========================
+# CMake
+# =========================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# =========================
+# Compiled files
+# =========================
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.lib
+*.so
+*.dll
+*.dylib
+
+# =========================
+# IDEs
+# =========================
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# =========================
+# vcpkg (IMPORTANT)
+# =========================
+vcpkg_installed/
+vcpkg/buildtrees/
+vcpkg/packages/
+vcpkg/downloads/
+installed/
+packages/
+
+# If you use a local vcpkg submodule, keep only the script:
+# vcpkg/ (but usually you DO commit this if it's a submodule)
+
+# =========================
+# Logs
+# =========================
+*.log
+CMakeOutput.log
+CMakeError.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
